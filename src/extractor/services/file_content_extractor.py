@@ -35,7 +35,7 @@ class _FileContentExtractor(ProcessPDFFile):
         """
 
         try:
-            result, processed = await self._process_file_byts(file_bytes, content_type)
+            result, processed = await self._process_file_bytes(file_bytes, content_type)
             return self._build_response(processed, result, filename, file_bytes, content_type)
         except (KeyError, Exception) as e:
             logger.error(str(e))
@@ -64,14 +64,14 @@ class _FileContentExtractor(ProcessPDFFile):
             ),
         )
 
-    async def _process_file_byts(self, file_bytes: bytes | io.BytesIO, content_type: str) -> tuple[str, bool]:
+    async def _process_file_bytes(self, file_bytes: bytes | io.BytesIO, content_type: str) -> tuple[str, bool]:
         """
         Process the file bytes based on the content type.
         This method checks the content type and applies the appropriate processing method.
 
         Parameters:
             file_bytes: bytes or io.BytesIO - The file content in bytes or BytesIO format.
-            content_type: str - The MIME type of the file (e.g., 'application/pdf
+            content_type: str - The MIME type of the file (e.g., 'application/pdf').
 
         Returns:
             tuple[str, bool] - A tuple containing the extracted content (or reason for failure)

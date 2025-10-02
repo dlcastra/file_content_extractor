@@ -93,7 +93,7 @@ class _FileContentExtractor(ProcessPDFFile):
                 return "Unsupported file type", False
 
             if "pdf" in content_type:
-                processed_pdf = await self.process_file_bytes(file_bytes)
+                processed_pdf = await self.process_pdf_bytes(file_bytes)
                 return processed_pdf.text or processed_pdf.reason, processed_pdf.processed
 
             return "", False

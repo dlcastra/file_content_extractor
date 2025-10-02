@@ -10,7 +10,7 @@ from src.extractor.utils import extract_first_page_text_from_pdf_bytes
 
 
 class ProcessPDFFile:
-    async def process_file_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedPDFSchema:
+    async def process_pdf_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedPDFSchema:
         """
         Process PDF file bytes to extract text content.
         Uses base text extraction if text is found on the first page, otherwise uses OCR for pages with images.

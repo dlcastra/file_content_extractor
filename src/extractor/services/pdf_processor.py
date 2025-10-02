@@ -1,0 +1,124 @@
+import asyncio
+import io
+
+import fitz
+from loguru import logger
+
+from src.azure.handlers import extract_text_from_pdf_bytes
+from src.extractor.services.schemas import ProcessedPDFSchema
+from src.extractor.utils import extract_first_page_text_from_pdf_bytes
+
+
+class ProcessPDFFile:
+    async def process_file_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedPDFSchema:
+        """
+        Process PDF file bytes to extract text content.
+        Uses base text extraction if text is found on the first page, otherwise uses OCR for pages with images.
+        For base text extraction, PyMuPDF (fitz) is used and for OCR, Azure Cognitive Services is intended.
+
+        Parameters:
+            file_bytes: bytes or io.BytesIO - The PDF file content in bytes or BytesIO format.
+
+        Returns:
+            ProcessedPDFSchema - The result of the processing, including success status and extracted text or
+            reason for failure. For successful processing requires 'text' field, for failed processing requires 'reason' field.
+
+            **Examples:**
+                - ProcessedPDFSchema(processed=True, text="Extracted text from PDF")
+                - ProcessedPDFSchema(processed=False, reason="Failed to extract text from the file")
+        """
+
+        logger.info("Starting PDF file processing")
+
+        if not file_bytes:
+            logger.info("Missed file bytes")
+            return ProcessedPDFSchema(processed=False, reason="Missed file bytes")
+
+        first_page_text = await asyncio.to_thread(extract_first_page_text_from_pdf_bytes, file_bytes)
+
+        extracted_file_content, processed = "", False
+        if first_page_text:
+            logger.info("First page text extracted successfully, using base text extraction")
+            extracted_file_content, processed = await self._use_base_text_extraction(file_bytes)
+
+        elif not first_page_text:
+            logger.info("No text found on the first page, using OCR text extraction")
+            extracted_file_content, processed = await self._use_ocr_text_extraction(file_bytes)
+
+        if not processed:
+            logger.info("Failed to extract text from the file")
+            return ProcessedPDFSchema(processed=processed, reason="Failed to extract text from the file")
+
+        return ProcessedPDFSchema(processed=processed, text=extracted_file_content)
+
+    async def _use_base_text_extraction(self, file_bytes: bytes | io.BytesIO) -> tuple[str, bool]:
+        """
+        Extract text from PDF using PyMuPDF (fitz) library.
+        This method reads the PDF file bytes and extracts text from all pages.
+        If text extraction is successful, it returns the concatenated text from all pages.
+        If any error occurs during the process, it logs the error and returns an empty string with a failure status.
+
+        Parameters:
+            file_bytes: bytes or io.BytesIO - The PDF file content in bytes or BytesIO format.
+
+        Returns:
+            tuple[str, bool] - A tuple containing the extracted text (or an empty string if extraction failed)
+            and a boolean indicating success (True) or failure (False).
+
+            **Examples:**
+                - ("Extracted text from PDF", True)
+                - ("", False)
+        """
+
+        try:
+            logger.info(f"Starting text extraction from PDF file")
+            doc = fitz.open("pdf", file_bytes.read())
+
+            pages_text = ""
+            for page in doc.pages():
+                text = page.get_text()
+                pages_text += f" {text}"
+
+            logger.info(f"Text extracted successfully")
+            return pages_text, True
+
+        except Exception as e:
+            logger.error(f"Unexpected error during base text extraction: {str(e)}")
+            return "", False
+
+    async def _use_ocr_text_extraction(self, file_bytes: bytes | io.BytesIO):
+        """
+        Extract text from PDF using OCR via Azure Cognitive Services.
+        This method sends the PDF file bytes to Azure's OCR service to extract text.
+        If text extraction is successful, it returns the extracted text.
+        If any error occurs during the process, it logs the error and returns an empty string with a failure status.
+
+        Parameters:
+            file_bytes: bytes or io.BytesIO - The PDF file content in bytes or BytesIO
+
+        Returns:
+            tuple[str, bool] - A tuple containing the extracted text (or an empty string if extraction failed)
+            and a boolean indicating success (True) or failure (False).
+
+            **Examples:**
+                - ("Extracted text from PDF via OCR", True)
+                - ("", False)
+        """
+
+        try:
+            logger.info(f"Starting OCR text extraction from PDF file")
+
+            ocr_extracted_text = await extract_text_from_pdf_bytes(file_bytes)
+            if ocr_extracted_text and ocr_extracted_text == " ":
+                return "Could not extract text via OCR or file is empty.", False
+
+            logger.info(f"OCR text extracted successfully")
+            return ocr_extracted_text, True
+
+        except Exception as e:
+            logger.error(f"Unexpected error during OCR text extraction: {str(e)}")
+            return "", False
+
+
+def get_pdf_processor() -> ProcessPDFFile:
+    return ProcessPDFFile()

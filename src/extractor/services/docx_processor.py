@@ -10,6 +10,21 @@ from src.extractor.services.schemas import ProcessedFileSchema
 
 class DocxProcessor(ProcessorMixin):
     async def process_docx_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedFileSchema:
+        """
+        Process DOCX file bytes to extract text content.
+        Uses base text extraction from python-docx library.
+
+        Parameters:
+            file_bytes: bytes or io.BytesIO - The PDF file content in bytes or BytesIO format.
+
+        Returns:
+            ProcessedFileSchema - The result of the processing, including success status and extracted text or
+            reason for failure. For successful processing requires 'text' field, for failed processing requires 'reason' field.
+
+            **Examples:**
+                - ProcessedFileSchema(processed=True, text="Extracted text from PDF")
+                - ProcessedFileSchema(processed=False, reason="Failed to extract text from the file")
+        """
         logger.info("Starting DOCX file processing")
 
         if not file_bytes:

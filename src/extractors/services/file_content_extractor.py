@@ -2,9 +2,9 @@ import io
 
 from loguru import logger
 
-from src.extractor.services.docx_processor import DocxProcessor
-from src.extractor.services.pdf_processor import ProcessPDFFile
-from src.extractor.services.schemas import FileContentExtractSchema, FileInfoSchema
+from src.extractors.services.docx_processor import DocxProcessor
+from src.extractors.services.pdf_processor import ProcessPDFFile
+from src.extractors.services.schemas import FileContentExtractSchema, FileInfoSchema
 
 
 class _FileContentExtractor(ProcessPDFFile, DocxProcessor):

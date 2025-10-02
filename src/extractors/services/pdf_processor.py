@@ -4,9 +4,9 @@ import io
 import fitz
 from loguru import logger
 
-from src.extractor.mixins.processors import ProcessorMixin
-from src.extractor.services.schemas import ProcessedFileSchema
-from src.extractor.utils import extract_first_page_text_from_pdf_bytes
+from src.extractors.mixins.processors import ProcessorMixin
+from src.extractors.services.schemas import ProcessedFileSchema
+from src.extractors.utils import extract_first_page_text_from_pdf_bytes
 
 
 class ProcessPDFFile(ProcessorMixin):

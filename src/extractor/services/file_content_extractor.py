@@ -2,13 +2,17 @@ import io
 
 from loguru import logger
 
+from src.extractor.services.docx_processor import DocxProcessor
 from src.extractor.services.pdf_processor import ProcessPDFFile
 from src.extractor.services.schemas import FileContentExtractSchema, FileInfoSchema
 
 
-class _FileContentExtractor(ProcessPDFFile):
+class _FileContentExtractor(ProcessPDFFile, DocxProcessor):
     def __init__(self):
-        self.SUPPORTED_CONTENT_TYPES = ["application/pdf"]
+        self.SUPPORTED_CONTENT_TYPES = [
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ]
 
     async def extract_file_content(
         self, filename: str, file_bytes: bytes | io.BytesIO, content_type: str
@@ -35,7 +39,15 @@ class _FileContentExtractor(ProcessPDFFile):
         """
 
         try:
-            result, processed = await self._process_file_byts(file_bytes, content_type)
+            if not file_bytes:
+                logger.info("Missed file bytes")
+                return self._build_response(False, "Missed file bytes", filename, file_bytes, content_type)
+
+            elif content_type not in self.SUPPORTED_CONTENT_TYPES:
+                logger.info(f"Unsupported content type: {content_type}")
+                return self._build_response(False, "Unsupported file type", filename, file_bytes, content_type)
+
+            result, processed = await self._process_file_bytes(file_bytes, content_type)
             return self._build_response(processed, result, filename, file_bytes, content_type)
         except (KeyError, Exception) as e:
             logger.error(str(e))
@@ -64,14 +76,14 @@ class _FileContentExtractor(ProcessPDFFile):
             ),
         )
 
-    async def _process_file_byts(self, file_bytes: bytes | io.BytesIO, content_type: str) -> tuple[str, bool]:
+    async def _process_file_bytes(self, file_bytes: bytes | io.BytesIO, content_type: str) -> tuple[str, bool]:
         """
         Process the file bytes based on the content type.
         This method checks the content type and applies the appropriate processing method.
 
         Parameters:
             file_bytes: bytes or io.BytesIO - The file content in bytes or BytesIO format.
-            content_type: str - The MIME type of the file (e.g., 'application/pdf
+            content_type: str - The MIME type of the file (e.g., 'application/pdf').
 
         Returns:
             tuple[str, bool] - A tuple containing the extracted content (or reason for failure)
@@ -84,17 +96,13 @@ class _FileContentExtractor(ProcessPDFFile):
 
         try:
             file_bytes.seek(0)
-
-            if not file_bytes:
-                logger.info("Missed file bytes")
-                return "Missed file bytes", False
-            elif content_type not in self.SUPPORTED_CONTENT_TYPES:
-                logger.info(f"Unsupported content type: {content_type}")
-                return "Unsupported file type", False
-
             if "pdf" in content_type:
-                processed_pdf = await self.process_file_bytes(file_bytes)
+                processed_pdf = await self.process_pdf_bytes(file_bytes)
                 return processed_pdf.text or processed_pdf.reason, processed_pdf.processed
+
+            elif "wordprocessingml.document" in content_type:
+                processed_docx = await self.process_docx_bytes(file_bytes)
+                return processed_docx.text or processed_docx.reason, processed_docx.processed
 
             return "", False
 

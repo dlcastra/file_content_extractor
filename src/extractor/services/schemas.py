@@ -23,7 +23,7 @@ class FileContentExtractSchema(BaseModel):
         arbitrary_types_allowed = True
 
 
-class ProcessedPDFSchema(BaseModel):
+class ProcessedFileSchema(BaseModel):
     processed: bool
     reason: Optional[str] = ""
     text: Optional[str] = ""

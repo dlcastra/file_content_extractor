@@ -5,7 +5,7 @@ from loguru import logger
 from src.azure.clients import get_ocr_client
 
 
-async def extract_text_from_pdf_bytes(file_bytes: bytes | io.BytesIO) -> str:
+async def extract_text_file_bytes(file_bytes: bytes | io.BytesIO) -> str:
     """
     Extract text from PDF bytes using Azure OCR.
     This function takes a BytesIO object containing PDF data,

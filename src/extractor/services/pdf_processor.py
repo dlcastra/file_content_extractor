@@ -4,12 +4,12 @@ import io
 import fitz
 from loguru import logger
 
-from src.azure.handlers import extract_text_from_pdf_bytes
+from src.extractor.mixins.processors import ProcessorMixin
 from src.extractor.services.schemas import ProcessedPDFSchema
 from src.extractor.utils import extract_first_page_text_from_pdf_bytes
 
 
-class ProcessPDFFile:
+class ProcessPDFFile(ProcessorMixin):
     async def process_pdf_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedPDFSchema:
         """
         Process PDF file bytes to extract text content.
@@ -84,39 +84,6 @@ class ProcessPDFFile:
 
         except Exception as e:
             logger.error(f"Unexpected error during base text extraction: {str(e)}")
-            return "", False
-
-    async def _use_ocr_text_extraction(self, file_bytes: bytes | io.BytesIO):
-        """
-        Extract text from PDF using OCR via Azure Cognitive Services.
-        This method sends the PDF file bytes to Azure's OCR service to extract text.
-        If text extraction is successful, it returns the extracted text.
-        If any error occurs during the process, it logs the error and returns an empty string with a failure status.
-
-        Parameters:
-            file_bytes: bytes or io.BytesIO - The PDF file content in bytes or BytesIO
-
-        Returns:
-            tuple[str, bool] - A tuple containing the extracted text (or an empty string if extraction failed)
-            and a boolean indicating success (True) or failure (False).
-
-            **Examples:**
-                - ("Extracted text from PDF via OCR", True)
-                - ("", False)
-        """
-
-        try:
-            logger.info(f"Starting OCR text extraction from PDF file")
-
-            ocr_extracted_text = await extract_text_from_pdf_bytes(file_bytes)
-            if ocr_extracted_text and ocr_extracted_text == " ":
-                return "Could not extract text via OCR or file is empty.", False
-
-            logger.info(f"OCR text extracted successfully")
-            return ocr_extracted_text, True
-
-        except Exception as e:
-            logger.error(f"Unexpected error during OCR text extraction: {str(e)}")
             return "", False
 
 

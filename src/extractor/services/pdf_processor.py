@@ -79,6 +79,9 @@ class ProcessPDFFile(ProcessorMixin):
                 text = page.get_text()
                 pages_text += f" {text}"
 
+            if not pages_text.strip():
+                return "Could not extract text or file is empty.", False
+
             logger.info(f"Text extracted successfully")
             return pages_text, True
 

@@ -6,7 +6,7 @@ from loguru import logger
 from starlette.responses import JSONResponse
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 
-from src.extractor.routers import router as extractor_router
+from src.extractors.routers import router as extractor_router
 
 app = FastAPI()
 

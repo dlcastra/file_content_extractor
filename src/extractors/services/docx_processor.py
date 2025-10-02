@@ -4,8 +4,8 @@ from docx import Document
 from docx.document import Document as DocumentObject
 from loguru import logger
 
-from src.extractor.mixins.processors import ProcessorMixin
-from src.extractor.services.schemas import ProcessedFileSchema
+from src.extractors.mixins.processors import ProcessorMixin
+from src.extractors.services.schemas import ProcessedFileSchema
 
 
 class DocxProcessor(ProcessorMixin):

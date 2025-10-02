@@ -3,8 +3,8 @@ from io import BytesIO
 from fastapi import APIRouter, UploadFile
 from starlette import status
 
-from src.extractor.responses.schemas import builder_file_content_extraction_response
-from src.extractor.services import get_file_content_extractor
+from src.extractors.responses.schemas import builder_file_content_extraction_response
+from src.extractors.services import get_file_content_extractor
 
 router = APIRouter()
 

@@ -5,12 +5,12 @@ import fitz
 from loguru import logger
 
 from src.extractor.mixins.processors import ProcessorMixin
-from src.extractor.services.schemas import ProcessedPDFSchema
+from src.extractor.services.schemas import ProcessedFileSchema
 from src.extractor.utils import extract_first_page_text_from_pdf_bytes
 
 
 class ProcessPDFFile(ProcessorMixin):
-    async def process_pdf_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedPDFSchema:
+    async def process_pdf_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedFileSchema:
         """
         Process PDF file bytes to extract text content.
         Uses base text extraction if text is found on the first page, otherwise uses OCR for pages with images.
@@ -20,19 +20,19 @@ class ProcessPDFFile(ProcessorMixin):
             file_bytes: bytes or io.BytesIO - The PDF file content in bytes or BytesIO format.
 
         Returns:
-            ProcessedPDFSchema - The result of the processing, including success status and extracted text or
+            ProcessedFileSchema - The result of the processing, including success status and extracted text or
             reason for failure. For successful processing requires 'text' field, for failed processing requires 'reason' field.
 
             **Examples:**
-                - ProcessedPDFSchema(processed=True, text="Extracted text from PDF")
-                - ProcessedPDFSchema(processed=False, reason="Failed to extract text from the file")
+                - ProcessedFileSchema(processed=True, text="Extracted text from PDF")
+                - ProcessedFileSchema(processed=False, reason="Failed to extract text from the file")
         """
 
         logger.info("Starting PDF file processing")
 
         if not file_bytes:
             logger.info("Missed file bytes")
-            return ProcessedPDFSchema(processed=False, reason="Missed file bytes")
+            return ProcessedFileSchema(processed=False, reason="Missed file bytes")
 
         first_page_text = await asyncio.to_thread(extract_first_page_text_from_pdf_bytes, file_bytes)
 
@@ -47,9 +47,9 @@ class ProcessPDFFile(ProcessorMixin):
 
         if not processed:
             logger.info("Failed to extract text from the file")
-            return ProcessedPDFSchema(processed=processed, reason="Failed to extract text from the file")
+            return ProcessedFileSchema(processed=processed, reason="Failed to extract text from the file")
 
-        return ProcessedPDFSchema(processed=processed, text=extracted_file_content)
+        return ProcessedFileSchema(processed=processed, text=extracted_file_content)
 
     async def _use_base_text_extraction(self, file_bytes: bytes | io.BytesIO) -> tuple[str, bool]:
         """

@@ -39,7 +39,7 @@ class ProcessPDFFile(ProcessorMixin):
         extracted_file_content, processed = "", False
         if first_page_text:
             logger.info("First page text extracted successfully, using base text extraction")
-            extracted_file_content, processed = await self._use_base_text_extraction(file_bytes)
+            extracted_file_content, processed = await self._use_base_pdf_text_extraction(file_bytes)
 
         elif not first_page_text:
             logger.info("No text found on the first page, using OCR text extraction")
@@ -51,7 +51,7 @@ class ProcessPDFFile(ProcessorMixin):
 
         return ProcessedFileSchema(processed=processed, text=extracted_file_content)
 
-    async def _use_base_text_extraction(self, file_bytes: bytes | io.BytesIO) -> tuple[str, bool]:
+    async def _use_base_pdf_text_extraction(self, file_bytes: bytes | io.BytesIO) -> tuple[str, bool]:
         """
         Extract text from PDF using PyMuPDF (fitz) library.
         This method reads the PDF file bytes and extracts text from all pages.

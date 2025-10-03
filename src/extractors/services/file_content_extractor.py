@@ -3,13 +3,11 @@ from typing import Callable
 
 from loguru import logger
 
-from src.extractors.services.docx_processor import DocxProcessor
-from src.extractors.services.pdf_processor import ProcessPDFFile
+from src.extractors.services.processors import GlobalProcessor
 from src.extractors.services.schemas import FileContentExtractSchema, FileInfoSchema, ProcessedFileSchema
-from src.extractors.services.txt_processor import TXTProcessor
 
 
-class _FileContentExtractor(ProcessPDFFile, DocxProcessor, TXTProcessor):
+class _FileContentExtractor(GlobalProcessor):
     def __init__(self):
         self.PROCESSOR_BY_CONTENT_TYPES: dict[str, Callable] = {
             "application/pdf": self.process_pdf_bytes,

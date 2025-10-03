@@ -9,7 +9,7 @@ from src.extractors.services.schemas import ProcessedFileSchema
 from src.extractors.utils import extract_first_page_text_from_pdf_bytes
 
 
-class ProcessPDFFile(ProcessorMixin):
+class PDFProcessor(ProcessorMixin):
     async def process_pdf_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedFileSchema:
         """
         Process PDF file bytes to extract text content.
@@ -88,7 +88,3 @@ class ProcessPDFFile(ProcessorMixin):
         except Exception as e:
             logger.error(f"Unexpected error during base text extraction: {str(e)}")
             return "", False
-
-
-def get_pdf_processor() -> ProcessPDFFile:
-    return ProcessPDFFile()

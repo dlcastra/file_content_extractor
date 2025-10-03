@@ -5,13 +5,15 @@ from loguru import logger
 from src.extractors.services.docx_processor import DocxProcessor
 from src.extractors.services.pdf_processor import ProcessPDFFile
 from src.extractors.services.schemas import FileContentExtractSchema, FileInfoSchema
+from src.extractors.services.txt_processor import TXTProcessor
 
 
-class _FileContentExtractor(ProcessPDFFile, DocxProcessor):
+class _FileContentExtractor(ProcessPDFFile, DocxProcessor, TXTProcessor):
     def __init__(self):
         self.SUPPORTED_CONTENT_TYPES = [
             "application/pdf",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/plain",
         ]
 
     async def extract_file_content(
@@ -103,6 +105,10 @@ class _FileContentExtractor(ProcessPDFFile, DocxProcessor):
             elif "wordprocessingml.document" in content_type:
                 processed_docx = await self.process_docx_bytes(file_bytes)
                 return processed_docx.text or processed_docx.reason, processed_docx.processed
+
+            elif "text/plain" in content_type:
+                processed_txt = await self.process_txt_bytes(file_bytes)
+                return processed_txt.text or processed_txt.reason, processed_txt.processed
 
             return "", False
 

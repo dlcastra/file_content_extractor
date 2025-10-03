@@ -9,7 +9,7 @@ from src.extractors.services.schemas import ProcessedFileSchema
 from src.extractors.utils import extract_first_page_text_from_pdf_bytes
 
 
-class ProcessPDFFile(ProcessorMixin):
+class PDFProcessor(ProcessorMixin):
     async def process_pdf_bytes(self, file_bytes: bytes | io.BytesIO) -> ProcessedFileSchema:
         """
         Process PDF file bytes to extract text content.
@@ -24,8 +24,8 @@ class ProcessPDFFile(ProcessorMixin):
             reason for failure. For successful processing requires 'text' field, for failed processing requires 'reason' field.
 
             **Examples:**
-                - ProcessedFileSchema(processed=True, text="Extracted text from PDF")
-                - ProcessedFileSchema(processed=False, reason="Failed to extract text from the file")
+                - ProcessedFileSchema(processed=True, http_status=201, text="Extracted text from PDF")
+                - ProcessedFileSchema(processed=False, http_status=422, reason="Failed to extract text from the file")
         """
 
         logger.info("Starting PDF file processing")
@@ -47,9 +47,9 @@ class ProcessPDFFile(ProcessorMixin):
 
         if not processed:
             logger.info("Failed to extract text from the file")
-            return ProcessedFileSchema(processed=processed, reason="Failed to extract text from the file")
+            return ProcessedFileSchema(processed=processed, http_status=422, reason=extracted_file_content)
 
-        return ProcessedFileSchema(processed=processed, text=extracted_file_content)
+        return ProcessedFileSchema(processed=processed, http_status=201, text=extracted_file_content)
 
     async def _use_base_pdf_text_extraction(self, file_bytes: bytes | io.BytesIO) -> tuple[str, bool]:
         """
@@ -70,8 +70,7 @@ class ProcessPDFFile(ProcessorMixin):
                 - ("", False)
         """
 
-        try:
-            logger.info(f"Starting text extraction from PDF file")
+        def _decode() -> str:
             doc = fitz.open("pdf", file_bytes.read())
 
             pages_text = ""
@@ -79,16 +78,18 @@ class ProcessPDFFile(ProcessorMixin):
                 text = page.get_text()
                 pages_text += f" {text}"
 
-            if not pages_text.strip():
+            return pages_text
+
+        try:
+            logger.info(f"Starting text extraction from PDF file")
+
+            text = await asyncio.to_thread(_decode)
+            if not text.strip():
                 return "Could not extract text or file is empty.", False
 
             logger.info(f"Text extracted successfully")
-            return pages_text, True
+            return text, True
 
         except Exception as e:
             logger.error(f"Unexpected error during base text extraction: {str(e)}")
             return "", False
-
-
-def get_pdf_processor() -> ProcessPDFFile:
-    return ProcessPDFFile()

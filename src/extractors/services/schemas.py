@@ -16,6 +16,7 @@ class FileInfoSchema(BaseModel):
 
 class FileContentExtractSchema(BaseModel):
     success: bool
+    http_status: Optional[int] = 200
     reason: Optional[str] = ""
     file: FileInfoSchema
 
@@ -25,6 +26,7 @@ class FileContentExtractSchema(BaseModel):
 
 class ProcessedFileSchema(BaseModel):
     processed: bool
+    http_status: Optional[int] = 200
     reason: Optional[str] = ""
     text: Optional[str] = ""
 

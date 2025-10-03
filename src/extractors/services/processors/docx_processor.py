@@ -1,3 +1,4 @@
+import asyncio
 import io
 
 from docx import Document
@@ -22,23 +23,24 @@ class DocxProcessor(ProcessorMixin):
             reason for failure. For successful processing requires 'text' field, for failed processing requires 'reason' field.
 
             **Examples:**
-                - ProcessedFileSchema(processed=True, text="Extracted text from PDF")
-                - ProcessedFileSchema(processed=False, reason="Failed to extract text from the file")
+                - ProcessedFileSchema(processed=True, http_status=201, text="Extracted text from DOCX")
+                - ProcessedFileSchema(processed=False, http_status=422, reason="Failed to extract text from the file")
         """
+
         logger.info("Starting DOCX file processing")
 
         if not file_bytes:
             logger.info("Missed file bytes")
-            return ProcessedFileSchema(processed=False, reason="Missed file bytes")
+            return ProcessedFileSchema(processed=False, http_status=500, reason="Missed file bytes")
 
         document = Document(file_bytes)
         extracted_file_content, processed = await self._use_base_docx_text_extraction(document)
 
         if not processed:
             logger.info("Failed to extract text from the file")
-            return ProcessedFileSchema(processed=processed, reason="Failed to extract text from the file")
+            return ProcessedFileSchema(processed=processed, http_status=422, reason=extracted_file_content)
 
-        return ProcessedFileSchema(processed=processed, text=extracted_file_content)
+        return ProcessedFileSchema(processed=processed, http_status=201, text=extracted_file_content)
 
     async def _use_base_docx_text_extraction(self, document: DocumentObject) -> tuple[str, bool]:
         """
@@ -59,15 +61,19 @@ class DocxProcessor(ProcessorMixin):
                 - ("", False)
         """
 
+        def _decode() -> str:
+            return " ".join([para.text for para in document.paragraphs])
+
         try:
             logger.info(f"Starting text extraction from DOCX file")
 
-            paragraphs_text = " ".join([para.text for para in document.paragraphs])
-            if not paragraphs_text.strip():
+            text = await asyncio.to_thread(_decode)
+            if not text.strip():
                 return "Could not extract text or file is empty.", False
 
             logger.info(f"Text extracted successfully")
-            return paragraphs_text, True
+            return text, True
+
         except Exception as e:
             logger.error(f"Error during DOCX text extraction: {e}")
             return "", False

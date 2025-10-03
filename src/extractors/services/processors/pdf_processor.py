@@ -70,8 +70,7 @@ class PDFProcessor(ProcessorMixin):
                 - ("", False)
         """
 
-        try:
-            logger.info(f"Starting text extraction from PDF file")
+        def _decode() -> str:
             doc = fitz.open("pdf", file_bytes.read())
 
             pages_text = ""
@@ -79,11 +78,17 @@ class PDFProcessor(ProcessorMixin):
                 text = page.get_text()
                 pages_text += f" {text}"
 
-            if not pages_text.strip():
+            return pages_text
+
+        try:
+            logger.info(f"Starting text extraction from PDF file")
+
+            text = await asyncio.to_thread(_decode)
+            if not text.strip():
                 return "Could not extract text or file is empty.", False
 
             logger.info(f"Text extracted successfully")
-            return pages_text, True
+            return text, True
 
         except Exception as e:
             logger.error(f"Unexpected error during base text extraction: {str(e)}")

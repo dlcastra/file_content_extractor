@@ -1,3 +1,4 @@
+import asyncio
 import io
 
 from docx import Document
@@ -60,15 +61,19 @@ class DocxProcessor(ProcessorMixin):
                 - ("", False)
         """
 
+        def _decode() -> str:
+            return " ".join([para.text for para in document.paragraphs])
+
         try:
             logger.info(f"Starting text extraction from DOCX file")
 
-            paragraphs_text = " ".join([para.text for para in document.paragraphs])
-            if not paragraphs_text.strip():
+            text = await asyncio.to_thread(_decode)
+            if not text.strip():
                 return "Could not extract text or file is empty.", False
 
             logger.info(f"Text extracted successfully")
-            return paragraphs_text, True
+            return text, True
+
         except Exception as e:
             logger.error(f"Error during DOCX text extraction: {e}")
             return "", False

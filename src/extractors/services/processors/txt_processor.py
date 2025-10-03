@@ -62,8 +62,8 @@ class TXTProcessor:
 
         try:
             logger.info(f"Starting text extraction from TXT file")
-            text = await asyncio.to_thread(_decode)
 
+            text = await asyncio.to_thread(_decode)
             if not text.strip():
                 return "Could not extract text or file is empty.", False
 

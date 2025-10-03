@@ -20,8 +20,8 @@ class TXTProcessor:
             ProcessedFileSchema - An object containing the extracted text and processing status.
 
             **Examples:**
-                - ProcessedFileSchema(processed=True, text="Extracted text from TXT")
-                - ProcessedFileSchema(processed=False, reason="Failed to extract text from the file")
+                - ProcessedFileSchema(processed=True, http_status=201, text="Extracted text from TXT")
+                - ProcessedFileSchema(processed=False, http_status=422, reason="Failed to extract text from the file")
         """
 
         logger.info("Starting TXT file processing")
@@ -33,9 +33,9 @@ class TXTProcessor:
         extracted_file_content, processed = await self._use_base_txt_text_extraction(file_bytes)
         if not processed:
             logger.info("Failed to extract text from the file")
-            return ProcessedFileSchema(processed=processed, reason=extracted_file_content)
+            return ProcessedFileSchema(processed=processed, http_status=422, reason=extracted_file_content)
 
-        return ProcessedFileSchema(processed=processed, text=extracted_file_content)
+        return ProcessedFileSchema(processed=processed, http_status=201, text=extracted_file_content)
 
     async def _use_base_txt_text_extraction(self, file_bytes: bytes | io.BytesIO) -> tuple[str, bool]:
         """

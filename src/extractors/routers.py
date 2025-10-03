@@ -2,6 +2,7 @@ from io import BytesIO
 
 from fastapi import APIRouter, UploadFile
 from starlette import status
+from starlette.responses import JSONResponse
 
 from src.extractors.responses.schemas import builder_file_content_extraction_response
 from src.extractors.services import get_file_content_extractor
@@ -19,10 +20,12 @@ async def scrape_file_content(
     service = get_file_content_extractor()
     result = await service.extract_file_content(file.filename, file_bytes, file.content_type)
 
-    return builder_file_content_extraction_response(
+    response_schema = builder_file_content_extraction_response(
         success=result.success,
         reason=result.reason,
         filename=result.file.filename,
         content_type=result.file.content_type,
         content=result.file.content,
-    )
+    ).model_dump()
+
+    return JSONResponse(status_code=result.http_status, content=response_schema)

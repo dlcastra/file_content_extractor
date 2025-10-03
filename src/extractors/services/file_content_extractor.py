@@ -1,18 +1,21 @@
 import io
+from typing import Callable
 
 from loguru import logger
 
 from src.extractors.services.docx_processor import DocxProcessor
 from src.extractors.services.pdf_processor import ProcessPDFFile
-from src.extractors.services.schemas import FileContentExtractSchema, FileInfoSchema
+from src.extractors.services.schemas import FileContentExtractSchema, FileInfoSchema, ProcessedFileSchema
+from src.extractors.services.txt_processor import TXTProcessor
 
 
-class _FileContentExtractor(ProcessPDFFile, DocxProcessor):
+class _FileContentExtractor(ProcessPDFFile, DocxProcessor, TXTProcessor):
     def __init__(self):
-        self.SUPPORTED_CONTENT_TYPES = [
-            "application/pdf",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ]
+        self.PROCESSOR_BY_CONTENT_TYPES: dict[str, Callable] = {
+            "application/pdf": self.process_pdf_bytes,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": self.process_docx_bytes,
+            "text/plain": self.process_txt_bytes,
+        }
 
     async def extract_file_content(
         self, filename: str, file_bytes: bytes | io.BytesIO, content_type: str
@@ -43,7 +46,7 @@ class _FileContentExtractor(ProcessPDFFile, DocxProcessor):
                 logger.info("Missed file bytes")
                 return self._build_response(False, "Missed file bytes", filename, file_bytes, content_type)
 
-            elif content_type not in self.SUPPORTED_CONTENT_TYPES:
+            elif content_type not in self.PROCESSOR_BY_CONTENT_TYPES:
                 logger.info(f"Unsupported content type: {content_type}")
                 return self._build_response(False, "Unsupported file type", filename, file_bytes, content_type)
 
@@ -96,15 +99,14 @@ class _FileContentExtractor(ProcessPDFFile, DocxProcessor):
 
         try:
             file_bytes.seek(0)
-            if "pdf" in content_type:
-                processed_pdf = await self.process_pdf_bytes(file_bytes)
-                return processed_pdf.text or processed_pdf.reason, processed_pdf.processed
 
-            elif "wordprocessingml.document" in content_type:
-                processed_docx = await self.process_docx_bytes(file_bytes)
-                return processed_docx.text or processed_docx.reason, processed_docx.processed
+            if self.PROCESSOR_BY_CONTENT_TYPES.get(content_type, None):
+                processor = self.PROCESSOR_BY_CONTENT_TYPES[content_type]
+                processed_file: ProcessedFileSchema = await processor(file_bytes)
 
-            return "", False
+                return processed_file.text or processed_file.reason, processed_file.processed
+
+            return "Unsupported file type", False
 
         except Exception as e:
             logger.error(f"Unexpected error during file processing: {str(e)}")
